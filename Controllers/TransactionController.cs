@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Expense_Tracker.Models;
 using Expense_Tracker.Data;
+using Expense_Tracker.Models;
+using System.Threading.Tasks;
 
 namespace Expense_Tracker.Controllers
 {
@@ -22,39 +18,49 @@ namespace Expense_Tracker.Controllers
             _userManager = userManager;
         }
 
-        // GET: Transaction
         public async Task<IActionResult> Index()
         {
             var transactions = _context.Transactions.Include(t => t.Category);
             return View(await transactions.ToListAsync());
         }
 
-        // GET: Transaction/AddOrEdit
-        public IActionResult AddOrEdit(int id = 0)
+        public async Task<IActionResult> AddOrEdit(int id = 0)
         {
             PopulateCategories();
             if (id == 0)
                 return View(new Transaction());
             else
-                return View(_context.Transactions.Find(id));
+                return View(await _context.Transactions.FindAsync(id));
         }
 
-        // POST: Transaction/AddOrEdit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddOrEdit([Bind("TransactionId,CategoryId,Amount,Note,Date")] Transaction transaction)
+        public async Task<IActionResult> AddOrEdit(Transaction transaction)
         {
             if (ModelState.IsValid)
             {
+                var user = await _userManager.GetUserAsync(User);
                 if (transaction.TransactionId == 0)
                 {
-                    var user = await _userManager.GetUserAsync(User);
-                    transaction.UserId = user.Id;
+                    if (user != null)
+                        transaction.UserId = user.Id;
                     _context.Add(transaction);
                 }
                 else
                 {
-                    _context.Update(transaction);
+                    var existingTransaction = await _context.Transactions.FindAsync(transaction.TransactionId);
+                    if (existingTransaction == null)
+                        return NotFound();
+
+                    existingTransaction.CategoryId = transaction.CategoryId;
+                    existingTransaction.Amount = transaction.Amount;
+                    existingTransaction.Date = transaction.Date;
+                    existingTransaction.Note = transaction.Note;
+
+                    if (user != null)
+                        existingTransaction.UserId = user.Id;
+
+                    _context.Update(existingTransaction);
                 }
 
                 await _context.SaveChangesAsync();
@@ -65,7 +71,6 @@ namespace Expense_Tracker.Controllers
             return View(transaction);
         }
 
-        // POST: Transaction/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -76,7 +81,6 @@ namespace Expense_Tracker.Controllers
                 _context.Transactions.Remove(transaction);
                 await _context.SaveChangesAsync();
             }
-
             return RedirectToAction(nameof(Index));
         }
 

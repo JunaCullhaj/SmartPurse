@@ -1,0 +1,56 @@
+﻿@model Expense_Tracker.ViewModels.ProfileViewModel
+
+@{
+    ViewData["Title"] = "Your Profile";
+}
+
+<div class="d-flex align-items-center justify-content-center vh-100">
+    <div class="card p-5" style="max-width: 500px; width: 100%; background-color: #1e1e2d; border: none; border-radius: 15px;">
+        <h2 class="text-center mb-4" style="color: #fff;">Your Profile</h2>
+
+        <!-- Form për Update Profile -->
+        <form asp-action="Index" method="post">
+            <div class="form-group mb-3">
+                <label class="text-light">First Name</label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="text-light">Last Name</label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="text-light">Username</label>
+                <input asp-for="UserName" class="form-control" readonly />
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="text-light">Email</label>
+                <input asp-for="Email" class="form-control" readonly />
+            </div>
+
+            <div class="d-grid mt-3">
+                <button type="submit" class="btn btn-success">Save Changes</button>
+            </div>
+        </form>
+
+        <div class="d-flex justify-content-between mt-3">
+            <!-- Form për Delete Account -->
+            <form asp-action="DeleteAccount" method="post" onsubmit="return confirm('Are you sure you want to delete your account?');">
+                <button type="submit" class="btn btn-danger">Delete Account</button>
+            </form>
+
+            <!-- Form për Logout -->
+            <form asp-action="Logout" method="post">
+                <button type="submit" class="btn btn-warning">Logout</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,60 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Expense_Tracker.Data; 
-using Expense_Tracker.Models; 
+using Expense_Tracker.Data;
+using Expense_Tracker.Models;
+using System.Threading.Tasks;
 
 namespace Expense_Tracker.Controllers
 {
     public class CategoryController : Controller
     {
-        private readonly Expense_Tracker.Data.ApplicationDbContext _context;
+        private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public CategoryController(Expense_Tracker.Data.ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public CategoryController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
         }
 
-        // GET: Category
         public async Task<IActionResult> Index()
         {
-            return _context.Categories != null ?
-                        View(await _context.Categories.ToListAsync()) :
-                        Problem("Entity set 'ApplicationDbContext.Categories' is null.");
+            return View(await _context.Categories.ToListAsync());
         }
 
-        // GET: Category/AddOrEdit
-        public IActionResult AddOrEdit(int id = 0)
+        public async Task<IActionResult> AddOrEdit(int id = 0)
         {
             if (id == 0)
                 return View(new Category());
             else
-                return View(_context.Categories.Find(id));
+                return View(await _context.Categories.FindAsync(id));
         }
 
-        // POST: Category/AddOrEdit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddOrEdit([Bind("CategoryId,Title,Icon,Type")] Category category)
+        public async Task<IActionResult> AddOrEdit(Category category)
         {
             if (ModelState.IsValid)
             {
+                var user = await _userManager.GetUserAsync(User);
                 if (category.CategoryId == 0)
                 {
-                    var user = await _userManager.GetUserAsync(User);
-                    category.UserId = user.Id;
+                    if (user != null)
+                        category.UserId = user.Id;
                     _context.Add(category);
                 }
                 else
                 {
-                    _context.Update(category);
+                    var existingCategory = await _context.Categories.FindAsync(category.CategoryId);
+                    if (existingCategory == null)
+                        return NotFound();
+
+                    existingCategory.Title = category.Title;
+                    existingCategory.Icon = category.Icon;
+                    existingCategory.Type = category.Type;
+
+                    if (user != null)
+                        existingCategory.UserId = user.Id;
+
+                    _context.Update(existingCategory);
                 }
 
                 await _context.SaveChangesAsync();
@@ -64,23 +67,16 @@ namespace Expense_Tracker.Controllers
             return View(category);
         }
 
-        // POST: Category/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Categories == null)
-            {
-                return Problem("Entity set 'ApplicationDbContext.Categories' is null.");
-            }
-
             var category = await _context.Categories.FindAsync(id);
             if (category != null)
             {
                 _context.Categories.Remove(category);
+                await _context.SaveChangesAsync();
             }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
     }

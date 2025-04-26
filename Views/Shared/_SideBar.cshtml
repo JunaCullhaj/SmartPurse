@@ -38,7 +38,7 @@
 
             profileName = $"{user.FirstName} {user.LastName}";
 
-            profileLink = "/Account/Profile"; // Nëse krijon një faqe profili më vonë
+            profileLink = "/Profile"; 
 
         }
 
@@ -58,11 +58,11 @@
         </div>
 
         <a href="@profileLink" style="text-decoration: none;">
-            <div class="profile-wrapper" style="cursor: pointer;">
-                <img class="profile-pic" src="~/profile.jpg" />
-                <div class="titles d-flex flex-column ps-3">
-                    <h6 class="mb-0" style="color: white;">Your Profile</h6>
-                    <span class="text-muted">@profileName</span>
+            <div class="profile-wrapper d-flex align-items-center gap-3 px-3 py-2" style="cursor: pointer; background-color: #2c2c3b; border-radius: 8px; margin: 10px;">
+                <i class="fa-solid fa-user fa-lg text-light"></i>
+                <div class="titles d-flex flex-column">
+                    <span class="fw-bold text-light" style="font-size: 1rem;">Profile</span>
+                    <small class="text-muted">@profileName</small>
                 </div>
             </div>
         </a>
