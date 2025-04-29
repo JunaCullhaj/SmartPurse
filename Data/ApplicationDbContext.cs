@@ -30,12 +30,6 @@ namespace Expense_Tracker.Data
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade); // Kjo lejohet
 
-            modelBuilder.Entity<Category>()
-                .HasOne(c => c.User)
-                .WithMany()
-                .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<Goal>()
                 .HasOne(g => g.User)
                 .WithMany()

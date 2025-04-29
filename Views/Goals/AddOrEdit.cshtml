@@ -7,29 +7,28 @@
 <div class="row">
     <div class="col-md-7">
         <div class="widget p-5" style="background-color:#212b36; border-radius:8px;">
-            <form asp-controller="Goals" asp-action="AddOrEdit" method="post">
+            <form id="goalForm">
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Title" />
+                <input type="hidden" asp-for="TargetAmount" />
+                <input type="hidden" asp-for="TargetDate" />
 
                 <div class="mb-3">
                     <ejs-textbox id="title" placeholder="Title" ejs-for="Title" floatLabelType="Always"></ejs-textbox>
-                    <span asp-validation-for="Title" class="text-danger fs-6"></span>
                 </div>
 
                 <div class="mb-3">
                     <ejs-numerictextbox id="targetAmount" ejs-for="TargetAmount"
                                         placeholder="Target Amount" floatLabelType="Always"
                                         min=0 format="c0"></ejs-numerictextbox>
-                    <span asp-validation-for="TargetAmount" class="text-danger fs-6"></span>
                 </div>
 
                 <div class="mb-3">
                     <ejs-datepicker id="targetDate" ejs-for="TargetDate"
                                     placeholder="Target Date" floatLabelType="Always"
                                     format="MMM-dd-yy"></ejs-datepicker>
-                    <span asp-validation-for="TargetDate" class="text-danger fs-6"></span>
                 </div>
 
                 <div class="mb-3">
@@ -38,16 +37,8 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <ejs-button id="submit" type="submit" content="Submit" cssClass="e-success"></ejs-button>
+                    <button id="submit" type="button" class="btn btn-success">Submit</button>
                     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-
-                    @if (Model.Id != 0)
-                    {
-                        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this goal?');" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
-                    }
                 </div>
             </form>
         </div>
@@ -61,10 +52,63 @@
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
     <script>
+        $(document).ready(function () {
+            $('#targetAmount').on('change', calculateSuggestion);
+            $('#targetDate').on('change', calculateSuggestion);
+
+            $('#submit').click(function () {
+                const title = document.getElementById('title').ej2_instances[0].value;
+                const amount = document.getElementById('targetAmount').ej2_instances[0].value;
+                const datePicker = document.getElementById('targetDate').ej2_instances[0];
+                const dateObj = datePicker.value;
+
+                if (!title || !amount || !dateObj) {
+                    alert('Please fill all fields correctly.');
+                    return;
+                }
+
+                const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+                console.log('Submitting with data:', {
+                    Title: title,
+                    TargetAmount: amount,
+                    TargetDate: dateObj
+                });
+
+                $.ajax({
+                    url: '/Goals/AddOrEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': antiForgeryToken
+                    },
+                    data: JSON.stringify({
+                        Id: $('input[name="Id"]').val() || 0,
+                        Title: title,
+                        TargetAmount: amount,
+                        TargetDate: dateObj.toISOString()
+                    }),
+                    success: function () {
+                        console.log('✅ Goal Saved Successfully.');
+                        window.location.href = '/Goals/Index';
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ Failed to Save Goal:', xhr.responseText);
+                        alert('Failed to save goal!');
+                    }
+                });
+            });
+        });
+
         function calculateSuggestion() {
-            var targetAmount = document.getElementById('targetAmount').value;
-            var targetDate = document.getElementById('targetDate').value;
+            const targetAmount = document.getElementById('targetAmount').ej2_instances[0].value;
+            const datePicker = document.getElementById('targetDate').ej2_instances[0];
+            const targetDate = datePicker.value;
 
             if (targetAmount && targetDate) {
                 $.ajax({
@@ -72,18 +116,18 @@
                     type: 'POST',
                     data: {
                         targetAmount: targetAmount,
-                        targetDate: targetDate
+                        targetDate: targetDate.toISOString()
                     },
                     success: function (data) {
                         document.getElementById('suggestion').value = data + ' per month';
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', xhr.responseText);
+                        alert('Failed to calculate suggested saving.');
                     }
                 });
             }
         }
 
-        $(document).ready(function () {
-            $('#targetAmount').on('change', calculateSuggestion);
-            $('#targetDate').on('change', calculateSuggestion);
-        });
     </script>
 }

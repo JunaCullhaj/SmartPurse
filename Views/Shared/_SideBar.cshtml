@@ -6,80 +6,80 @@
 @{
     List<Object> menuItems = new List<Object>();
 
-
-
     menuItems.Add(new { text = "General", separator = true });
-
     menuItems.Add(new { text = "Dashboard", url = "/", iconCss = "fa-solid fa-box" });
-
     menuItems.Add(new { text = "Categories", url = "/Category", iconCss = "fa-solid fa-folder-closed" });
-
     menuItems.Add(new { text = "Transactions", url = "/Transaction", iconCss = "fa-solid fa-arrow-right-arrow-left" });
-
     menuItems.Add(new { text = "Goals", url = "/Goals", iconCss = "fa-solid fa-chart-simple" });
 
-
-
     string profileName = "Click to create/login";
-
     string profileLink = "/Account/Register";
 
-
-
     if (SignInManager.IsSignedIn(User))
-
     {
-
         var user = await UserManager.GetUserAsync(User);
-
         if (user != null)
-
         {
-
             profileName = $"{user.FirstName} {user.LastName}";
-
-            profileLink = "/Profile"; 
-
+            profileLink = "/Profile";
         }
-
     }
 }
 
-<ejs-sidebar id="sidebar" width="290px" enableDock dockSize="100px"
+<ejs-sidebar id="sidebar" width="290px" enableDock="true" dockSize="100px"
              target=".dock-target" enableGestures="false">
     <e-content-template>
 
-        <div class="logo-wrapper">
-            <div class="app-logo">
-                <img src="~/logo.png" />
+        <!-- LOGO and TOGGLER, no background around logo -->
+        <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <div class="app-logo" style="cursor: pointer;" onclick="location.href='@Url.Content("~/")'">
+                <img src="~/logo.png" alt="Logo" style="height: 40px; width: 40px; border-radius: 10px;" />
             </div>
-            <div class="w-100"></div>
-            <i id="sidebar-toggler" class="fa-solid"></i>
+            <i id="sidebar-toggler" class="fa-solid fa-chevron-left text-light" style="cursor: pointer;"></i>
         </div>
 
+        <!-- PROFILE SECTION -->
         <a href="@profileLink" style="text-decoration: none;">
-            <div class="profile-wrapper d-flex align-items-center gap-3 px-3 py-2" style="cursor: pointer; background-color: #2c2c3b; border-radius: 8px; margin: 10px;">
-                <i class="fa-solid fa-user fa-lg text-light"></i>
+            <div class="profile-wrapper d-flex align-items-center gap-3 px-3 py-2 mt-3 mx-2"
+                 style="cursor: pointer; background-color: #2c2c3b; border-radius: 8px; transition: background-color 0.2s;">
+                <div class="icon-wrapper d-flex justify-content-center align-items-center"
+                     style="width: 40px; height: 40px; border-radius: 50%; background-color: #3a3a4f;">
+                    <i class="fa-solid fa-user text-white"></i>
+                </div>
                 <div class="titles d-flex flex-column">
-                    <span class="fw-bold text-light" style="font-size: 1rem;">Profile</span>
+                    <span class="fw-semibold text-white" style="font-size: 1rem;">
+                        @((SignInManager.IsSignedIn(User)) ? "Profile" : "Welcome")
+                    </span>
                     <small class="text-muted">@profileName</small>
                 </div>
             </div>
         </a>
 
+        <!-- MENU -->
         <ejs-menu id="menu"
                   items="menuItems"
                   orientation="Vertical"
-                  hamburgerMode></ejs-menu>
+                  hamburgerMode="true">
+        </ejs-menu>
 
     </e-content-template>
 </ejs-sidebar>
 
+<!-- Script for Sidebar Toggler -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var dockBar = document.getElementById('sidebar').ej2_instances[0];
-        document.getElementById('sidebar-toggler').onclick = function () {
-            dockBar.toggle();
-        };
+        const sidebar = document.getElementById('sidebar').ej2_instances[0];
+        const toggler = document.getElementById('sidebar-toggler');
+
+        toggler.addEventListener('click', function () {
+            sidebar.toggle();
+        });
     });
 </script>
+
+<!-- Hover effect for profile box -->
+<style>
+    .profile-wrapper:hover {
+        background-color: #3b3b4f;
+    }
+</style>

@@ -1,41 +1,45 @@
 ﻿@model Expense_Tracker.Models.Transaction
 
 @{
-    ViewData["PageTitle"] = Model.TransactionId == 0 ? "Create a new transaction" : "Edit transaction";
+    ViewData["PageTitle"] = (Model == null || Model.TransactionId == 0) ? "Create a new transaction" : "Edit transaction";
 }
 
 <div class="row">
     <div class="col-md-7">
         <div class="widget p-5" style="background-color:#212b36; border-radius:8px;">
-            <form asp-controller="Transaction" asp-action="AddOrEdit" method="post">
+            <form id="transactionForm" method="post">
                 @Html.AntiForgeryToken()
 
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <input type="hidden" name="TransactionId" value="@Model.TransactionId" />
+                <input type="hidden" id="TransactionId" value="@Model?.TransactionId" />
 
+                <!-- Date -->
                 <div class="mb-3">
                     <ejs-datepicker id="date" ejs-for="Date"
                                     placeholder="Date" floatLabelType="Always"
                                     format="MMM-dd-yy"></ejs-datepicker>
                 </div>
 
+                <!-- Category -->
                 <div class="mb-3">
                     <ejs-dropdownlist id="ddlCategory" ejs-for="CategoryId"
                                       dataSource="@ViewBag.Categories" placeholder="Category"
                                       floatLabelType="Always" allowFiltering="true" ignoreAccent="true"
                                       filterType="Contains" popupHeight="220px">
-                        <e-dropdownlist-fields value="CategoryId" text="TitleWithIcon"></e-dropdownlist-fields>
+                        <e-dropdownlist-fields value="CategoryId" text="Title"></e-dropdownlist-fields>
                     </ejs-dropdownlist>
                     <span asp-validation-for="CategoryId" class="text-danger fs-6"></span>
                 </div>
 
+                <!-- Amount -->
                 <div class="mb-3">
                     <ejs-numerictextbox id="amount" ejs-for="Amount"
                                         placeholder="Amount" floatLabelType="Always"
-                                        min=0 format="c0"></ejs-numerictextbox>
+                                        min="0" format="c0"></ejs-numerictextbox>
                     <span asp-validation-for="Amount" class="text-danger fs-6"></span>
                 </div>
 
+                <!-- Note -->
                 <div class="mb-3">
                     <ejs-textbox id="note" placeholder="Note" ejs-for="Note"
                                  floatLabelType="Always" multiline="true"></ejs-textbox>
@@ -57,7 +61,64 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            $('#transactionForm').submit(function (e) {
+                e.preventDefault();
+
+                var transactionId = $('#TransactionId').val();
+
+                var dateInput = document.getElementById('date').ej2_instances[0];
+                var date = dateInput.value ? dateInput.value.toISOString() : null;
+
+                var categoryInput = document.getElementById('ddlCategory').ej2_instances[0];
+                var categoryId = categoryInput.value;
+
+                var amountInput = document.getElementById('amount').ej2_instances[0];
+                var amount = amountInput.value;
+
+                var note = $('#note').val();
+
+                console.log("Data to submit:", {
+                    TransactionId: transactionId,
+                    Date: date,
+                    CategoryId: categoryId,
+                    Amount: amount,
+                    Note: note
+                });
+
+                if (!date || !categoryId || !amount) {
+                    alert("Please fill all fields correctly.");
+                    return;
+                }
+
+                $.ajax({
+                    url: '/Transaction/AddOrEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        TransactionId: transactionId,
+                        Date: date,
+                        CategoryId: parseInt(categoryId),
+                        Amount: parseFloat(amount),
+                        Note: note
+                    }),
+                    success: function (response) {
+                        console.log('Transaction saved successfully.');
+                        window.location.href = '/Transaction/Index';
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('Error saving transaction.');
+                    }
+                });
+            });
+        });
+
+
+    </script>
 }

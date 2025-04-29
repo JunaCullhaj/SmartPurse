@@ -7,10 +7,9 @@
 <div class="row">
     <div class="col-md-7">
         <div class="widget p-5" style="background-color:#212b36; border-radius:8px;">
-            <form asp-controller="Category" asp-action="AddOrEdit" method="post">
+            <form id="categoryForm">
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="CategoryId" />
 
                 <div class="mb-3">
@@ -24,19 +23,17 @@
                 </div>
 
                 <div class="mb-3">
-                    <ejs-textbox id="title" placeholder="Title" ejs-for="Title" floatLabelType="Always"></ejs-textbox>
+                    <input asp-for="Title" id="Title" class="form-control" placeholder="Title" />
                     <span asp-validation-for="Title" class="text-danger fs-6"></span>
                 </div>
 
                 <div class="mb-3">
-                    <ejs-textbox id="icon" placeholder="Icon" ejs-for="Icon" floatLabelType="Always"></ejs-textbox>
+                    <input asp-for="Icon" id="Icon" class="form-control" placeholder="Icon" />
                     <span asp-validation-for="Icon" class="text-danger fs-6"></span>
                 </div>
 
                 <div class="d-flex gap-2">
-                    <!-- Ky është submiti i vërtetë -->
                     <button type="submit" class="btn btn-success">Submit</button>
-
                     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
@@ -51,35 +48,36 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            var submitBtn = document.querySelector("button[type='submit']");
-            submitBtn.addEventListener("click", function (e) {
-                e.preventDefault(); // Ndalon submit normal
+        $(document).ready(function () {
+            $('#categoryForm').submit(function (e) {
+                e.preventDefault(); // Ndalojmë Submit normal
 
-                var title = document.getElementById("title").value;
-                var icon = document.getElementById("icon").value;
-                var type = document.querySelector('input[name="Type"]:checked')?.value;
-                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                var title = $('#Title').val();
+                var icon = $('#Icon').val();
+                var type = $('input[name="Type"]:checked').val();
+                var categoryId = $('input[name="CategoryId"]').val();
 
-                if (!title || !icon || !type || !token) {
-                    alert("Missing data!");
+                if (!title || !icon || !type) {
+                    alert("Please fill all fields.");
                     return;
                 }
 
                 $.ajax({
                     url: '/Category/AddOrEdit',
                     type: 'POST',
-                    data: {
-                        __RequestVerificationToken: token,
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        CategoryId: categoryId,
                         Title: title,
                         Icon: icon,
                         Type: type
-                    },
+                    }),
                     success: function (response) {
                         console.log('POST Success');
                         window.location.href = '/Category/Index';
@@ -89,8 +87,8 @@
                         alert('Error submitting form');
                     }
                 });
+
             });
         });
     </script>
 }
-

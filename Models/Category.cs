@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Expense_Tracker.Models
 {
@@ -13,17 +13,14 @@ namespace Expense_Tracker.Models
         public string Title { get; set; }
 
         [Required]
-        [StringLength(5)]
+        [StringLength(50)]
         public string Icon { get; set; }
 
         [Required]
         [StringLength(10)]
         public string Type { get; set; }
 
-        // ✅ Kjo është pjesa që mungon:
+        [BindNever]
         public string UserId { get; set; }
-
-        [ForeignKey("UserId")]
-        public ApplicationUser User { get; set; }
     }
 }

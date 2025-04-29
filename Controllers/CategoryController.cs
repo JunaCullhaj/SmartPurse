@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Expense_Tracker.Data;
 using Expense_Tracker.Models;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Expense_Tracker.Controllers
 {
@@ -20,7 +21,12 @@ namespace Expense_Tracker.Controllers
 
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Categories.ToListAsync());
+            var user = await _userManager.GetUserAsync(User);
+            var categories = await _context.Categories
+                .Where(c => c.UserId == user.Id)
+                .ToListAsync();
+
+            return View(categories);
         }
 
         public async Task<IActionResult> AddOrEdit(int id = 0)
@@ -32,40 +38,45 @@ namespace Expense_Tracker.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddOrEdit(Category category)
+        [IgnoreAntiforgeryToken] // Për provë tani (sepse Ajax nuk dërgon token automatikisht)
+        public async Task<IActionResult> AddOrEdit([FromBody] Category category)
         {
-            if (ModelState.IsValid)
+            Console.WriteLine($"Title: {category.Title}, Icon: {category.Icon}, Type: {category.Type}");
+
+            if (category == null)
             {
-                var user = await _userManager.GetUserAsync(User);
-                if (category.CategoryId == 0)
-                {
-                    if (user != null)
-                        category.UserId = user.Id;
-                    _context.Add(category);
-                }
-                else
-                {
-                    var existingCategory = await _context.Categories.FindAsync(category.CategoryId);
-                    if (existingCategory == null)
-                        return NotFound();
-
-                    existingCategory.Title = category.Title;
-                    existingCategory.Icon = category.Icon;
-                    existingCategory.Type = category.Type;
-
-                    if (user != null)
-                        existingCategory.UserId = user.Id;
-
-                    _context.Update(existingCategory);
-                }
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return BadRequest("Invalid data");
             }
 
-            return View(category);
+            var user = await _userManager.GetUserAsync(User);
+
+            if (category.CategoryId == 0)
+            {
+                if (user != null)
+                    category.UserId = user.Id;
+
+                _context.Add(category);
+            }
+            else
+            {
+                var existingCategory = await _context.Categories.FindAsync(category.CategoryId);
+                if (existingCategory == null)
+                    return NotFound();
+
+                existingCategory.Title = category.Title;
+                existingCategory.Icon = category.Icon;
+                existingCategory.Type = category.Type;
+
+                if (user != null)
+                    existingCategory.UserId = user.Id;
+
+                _context.Update(existingCategory);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
         }
+
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
